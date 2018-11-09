@@ -299,3 +299,63 @@ class CrossSectionCalc:
             dx /= delta_integral
             x += dx
         return integral
+
+
+class CrossSectionCalcBed(CrossSectionCalc):
+    def calcute(self):
+        """
+                Calculate the cross section binary encouter dipole
+
+                Example:
+                >>> calc = CrossSectionCalc(3810, atom= AtomFactory.get_neon())
+                >>> calc.total_cross_section_bed()
+                4.007883837878639e-18
+
+                :return: Total integrated cross section
+                """
+
+        integrated_cross_sec_subshells = np.zeros(len(self.w_max))
+        for i in range(len(self.w_max)):
+            integrated_cross_sec_subshells[i] = quad(
+                self.differential_cross_section_subshells_bed,
+                Decimal(0.),
+                self.w_max[i],
+                args=(i),
+            )[0]
+        total_cross_section_bed = np.sum(integrated_cross_sec_subshells)
+
+        return Decimal(1.0e4) * Decimal(total_cross_section_bed)  # Converting from m**2 to cm**2
+
+
+class CrossSectionCalcBebvm(CrossSectionCalc):
+    def __init__(self, T, atom=AtomFactory.get_neon()):
+        CrossSectionCalc.__init__(self, T, atom)
+        self.f_1_bed = (
+            4 * Decimal(np.pi) * self.a_0 ** 2 * atom.N * (self.R / atom.B) ** 2
+        )  # Constant factor from derivation
+        self.bbar = atom.B / (self.m_e * self.c ** 2)
+        self.ubar = atom.U_bed / (self.m_e * self.c ** 2)
+        self.beta_b = 1 - 1 / (1 + self.bbar) ** 2
+        self.beta_u = 1 - 1 / (1 + self.ubar) ** 2
+        self.tbar = self.T / (self.m_e * self.c ** 2)
+        self.beta_t = 1 - 1 / (1 + self.tbar) ** 2
+        array_elems = [elem.ln() for elem in (self.beta_t / self.beta_b)]
+        value = np.sqrt(
+                self.alpha ** 2
+                / (self.beta_t + self.beta_b)
+                * np.array(array_elems)
+            )
+        self.phi = decimalCos(
+            value
+        )
+        self.f_2 = (
+            -self.phi / (self.t + 1) * (1 + 2 * self.tbar) / (1 + self.tbar / 2) ** 2
+        )
+        self.f_3 = (
+            (self.beta_t * (1 + self.tbar) ** 2).ln()
+            - self.beta_t
+            - (2 * np.array([elem.ln() for elem in self.bbar]))
+        )
+
+    def calculate(self):
+        pass
