@@ -13,16 +13,7 @@ Sources :   Binary-encounter-dipole model for electron-impact ionization
 """
 
 import numpy as np
-import math
 from scipy.integrate import quad
-from decimal import *
-
-getcontext().prec = 45
-
-
-def decimalCos(n):
-    return Decimal(1.0) - n ** 2 / Decimal(2.0) + n ** 4 / Decimal(24.0) - \
-           n ** 6 / Decimal(720.0) + n ** 8 / Decimal(40320.0)
 
 
 class Atom(object):
@@ -55,23 +46,17 @@ class AtomFactory(object):
 
     @staticmethod
     def get_neon():
-        B = np.array(map(Decimal, [21.7, 48.47, 866.9]))
-        N = np.array(map(Decimal, [6, 2, 2]))
+        B = np.array([21.7, 48.47, 866.9])
+        N = np.array([6, 2, 2])
 
-        Ni = np.array(map(Decimal, [6.963, 0.7056, 1.686]))
-        Mi = np.array(map(Decimal, [1.552, 4.8e-2, 1.642e-2]))
+        Ni = np.array([6.963, 0.7056, 1.686])
+        Mi = np.array([1.552, 4.8e-2, 1.642e-2])
 
         ai_below_2s_ion_threshold = np.array(
             [
                 [4.8791, -2.882, -7.4711e-1, 0.0, 0.0, 0.0, 0.0],
                 [0.0, 1.7769, 2.8135, -3.151e1, 6.3469e1, -5.2528e1, 1.5982e1],
                 [0.0, 0.0, 5.2475, -2.8121, 0.0, 0.0, 0.0],
-            ]
-        )
-
-        ai_below_2s_ion_threshold = np.array(
-            [map(
-                Decimal, ai_below_2s_ion_threshold[i]) for i in range(len(ai_below_2s_ion_threshold))
             ]
         )
 
@@ -83,13 +68,7 @@ class AtomFactory(object):
             ]
         )
 
-        ai_above_2s_ion_threshold = np.array(
-            [map(
-                Decimal, ai_above_2s_ion_threshold[i]) for i in range(len(ai_above_2s_ion_threshold))
-            ]
-        )
-
-        U_bed = np.array(map(Decimal, [1.1602e2, 1.4188e2, 1.2591e3]))
+        U_bed = np.array([1.1602e2, 1.4188e2, 1.2591e3])
 
         return Atom(
             B, N, Ni, Mi, ai_below_2s_ion_threshold, ai_above_2s_ion_threshold, U_bed
@@ -97,25 +76,21 @@ class AtomFactory(object):
 
     @staticmethod
     def get_hydrogen():
-        B = np.array([Decimal(13.6057)])
-        N = np.array([Decimal(1)])
+        B = np.array([(13.6057)])
+        N = np.array([(1)])
 
-        Ni = np.array([Decimal(0.4343)])
-        Mi = np.array([Decimal(0.2834)])
+        Ni = np.array([(0.4343)])
+        Mi = np.array([(0.2834)])
 
         ai_below_2s_ion_threshold = np.array(
-            map(
-                Decimal, [0.0, -2.2473e-2, 1.1775, -4.6264e-1, 8.9064e-2, 0.0, 0.0]
-            )
+            [0.0, -2.2473e-2, 1.1775, -4.6264e-1, 8.9064e-2, 0.0, 0.0]
         )
 
         ai_above_2s_ion_threshold = np.array(
-            map(
-                Decimal, [0.0, -2.2473e-2, 1.1775, -4.6264e-1, 8.9064e-2, 0.0, 0.0]
-            )
+            [0.0, -2.2473e-2, 1.1775, -4.6264e-1, 8.9064e-2, 0.0, 0.0]
         )
 
-        U_bed = np.array([Decimal(13.6057)])
+        U_bed = np.array([(13.6057)])
 
         return Atom(
             B, N, Ni, Mi, ai_below_2s_ion_threshold, ai_above_2s_ion_threshold, U_bed
@@ -123,25 +98,21 @@ class AtomFactory(object):
 
     @staticmethod
     def get_helium():
-        B = np.array([Decimal(2.459e1)])
-        N = np.array([Decimal(2)])
+        B = np.array([(2.459e1)])
+        N = np.array([(2)])
 
-        Ni = np.array([Decimal(1.605)])
-        Mi = np.array([Decimal(0.489)])
+        Ni = np.array([(1.605)])
+        Mi = np.array([(0.489)])
 
         ai_below_2s_ion_threshold = np.array(
-            map(
-                Decimal, [0.0, 0.0, 1.2178e1, -2.9585e1, 3.1251e1, -1.2175e1, 0.0]
-            )
+            [0.0, 0.0, 1.2178e1, -2.9585e1, 3.1251e1, -1.2175e1, 0.0]
         )
 
         ai_above_2s_ion_threshold = np.array(
-            map(
-                Decimal, [0.0, 0.0, 1.2178e1, -2.9585e1, 3.1251e1, -1.2175e1, 0.0]
-            )
+            [0.0, 0.0, 1.2178e1, -2.9585e1, 3.1251e1, -1.2175e1, 0.0]
         )
 
-        U_bed = np.array([Decimal(3.951e1)])
+        U_bed = np.array([(3.951e1)])
 
         return Atom(
             B, N, Ni, Mi, ai_below_2s_ion_threshold, ai_above_2s_ion_threshold, U_bed
@@ -149,21 +120,201 @@ class AtomFactory(object):
 
 
 class CrossSectionCalc:
-    m_e = Decimal(9.11e-31)  # Electron mass in kg
-    c = Decimal(3e8)  # Speed of light in m/s
-    a_0 = Decimal(5.29e-11)  # Bohr radius in m
-    alpha = Decimal(1.0 / 137)  # Fine structure constant
-    R = Decimal(13.6)  # Rydberg constant in eV
+    m_e = 9.11e-31  # Electron mass in kg
+    c = 3e8  # Speed of light in m/s
+    a_0 = 5.29e-11  # Bohr radius in m
+    alpha = 1.0 / 137  # Fine structure constant
+    R = 13.6  # Rydberg constant in eV
 
     def __init__(self, T, atom=AtomFactory.get_neon()):
         self.atom = atom
-        self.T = Decimal(T) * Decimal(1e6)
-        self.w_max = ((self.T + atom.U_bed) / self.atom.B - Decimal(1)) / Decimal(2)
+        self.T = (T) #* 1e9
         self.t = (
                 self.T / atom.B
         )  # T in units of binding energy(vector with entries for each subshell)
+        self.w_max = (self.t - (1)) / (2)
+
+
+
+
+class CrossSectionCalcBed(CrossSectionCalc):
+    def __init__(self, T, atom=AtomFactory.get_neon()):
+        CrossSectionCalc.__init__(self, T, atom)
+
+        self.u = self.atom.U_bed / self.atom.B  # Constant factor from derivation
+
 
     '''
+    def integ(self, a, b, n_sample, shell=0):
+        """
+        Example
+        >>> calc = CrossSectionCalcBed(0.21, atom= AtomFactory.get_neon())
+        >>> w = calc.w_max[0]
+        >>> calc.integ(0, w, 50000, 0)
+
+        :param self:
+        :param a:
+        :param b:
+        :param n_sample:
+        :param shell:
+        :return:
+        """
+        x_vals = np.linspace(a, b, num=n_sample)
+        dx = ((b) - (a)) / (n_sample)
+        integral = (0)
+        for x in x_vals:
+            integral += self.SDCS(x, shell) * dx
+        return integral
+
+
+    def integ2(self, a, b, dx_initial, shell = 0):
+        """
+        Example
+        >>> calc = CrossSectionCalcBed(3.81, atom= AtomFactory.get_neon())
+        >>> w = calc.w_max[0]
+        >>> calc.integ2(0, w, 1e9, 0)
+
+        :param self:
+        :param a:
+        :param b:
+        :param n_sample:
+        :param shell:
+        :return:
+        """
+        dx = (dx_initial)
+        x = (a)
+        integral = (0)
+        while x <= b:
+            curr_steepness = self.SDCS(x, shell)
+            delta_integral = curr_steepness * dx
+            integral += delta_integral
+            dx = (
+                dx / (1 - curr_steepness**2)
+                if curr_steepness < 1
+                else dx / curr_steepness**2
+            )
+            x += dx
+        return integral
+
+    '''
+
+
+
+    def calculate(self):
+        """
+        Calculate the cross section binary encouter dipole
+
+        Example:
+        >>> calc = CrossSectionCalcBed(3.81, atom= AtomFactory.get_hydrogen())
+        >>> print(calc.w_max)
+        >>> calc.calculate()
+
+        4.007883837878639e-18
+
+        :return: Total integrated cross section
+        """
+        integrated_cross_sec_subshells = np.zeros(len(self.w_max))
+        for i in range(len(self.w_max)):
+            integrated_cross_sec_subshells[i] = quad(
+                self.SDCS, 0, self.w_max[i], args=(i)
+            )[0]
+
+        total_cross_section_bed = np.sum(integrated_cross_sec_subshells)
+
+        return (1.0e4) * (total_cross_section_bed)  # Converting from m**2 to cm**2
+
+    def calculate_oscillator_strength(self, w, n_shell):
+        """
+        Example:
+        >>> calc = CrossSectionCalcBed(3.81, atom = AtomFactory.get_neon())
+        >>> w = calc.w_max[1]
+        >>> calc.calculate_oscillator_strength(w, 1)
+
+        :param w:
+        :param n_shell:
+        :return:
+        """
+        threshold = ((w) + 1.0) * self.atom.B[n_shell]
+        coefficient_matrix = (
+            self.atom.ai_below if threshold < (48.47) else self.atom.ai_above
+        )
+        quotient = [1 / ((w) + (1.0)) ** i for i in range(1,8)]
+        osc_str = np.reshape(np.dot(coefficient_matrix, np.array(quotient)), (len(self.atom.B)))
+        return osc_str[n_shell]
+
+    def SDCS(self, w, n_shell):
+        """"
+
+        Single shell differential cross section depending on how much energy the electron will have gained after the
+        main interaction
+
+        Example:
+        >>> calc = CrossSectionCalcBed(3.810, atom = AtomFactory.get_neon())
+        >>> w = ((calc.t-1)/2)[1]
+        >>> calc.SDCS(w, 1)
+        >>> quad(calc.SDCS, 0, calc.w_max[1], args=(1))
+        """
+        u = self.atom.U_bed[n_shell] / self.atom.B[n_shell]
+        S = (
+            (4)
+            * (np.pi)
+            * self.a_0 ** 2
+            * self.atom.N[n_shell]
+            * (self.R / self.atom.B[n_shell]) ** 2
+        )
+        oscillator_strength = self.calculate_oscillator_strength(w, n_shell)
+
+        factor = S / (self.t[n_shell] + u + 1.0)
+
+        sub_factor1_1 = (self.atom.Ni[n_shell] / self.atom.N[n_shell]) - (2.0) / (
+            self.t[n_shell] + (1)
+        )
+        sub_factor1_2 = (1.0) / ((w) + (1.0)) + (1.0) / (self.t[n_shell] - (w))
+        sub_summand1 = sub_factor1_1 * sub_factor1_2
+
+        sub_factor2_1 = (2.0) - self.atom.Ni[n_shell] / self.atom.N[n_shell]
+        sub_factor2_2 = (1.0) / (self.t[n_shell] - (w)) ** 2 + (1.0) / (
+            (w) + (1.0)
+        ) ** 2
+        sub_summand2 = sub_factor2_1 * sub_factor2_2
+
+        sub_factor3_1 = np.log(self.t[n_shell]) / self.atom.N[n_shell]
+        sub_factor3_2 = np.dot((1.0) / ((w) + (1.0)), oscillator_strength)
+        sub_summand3 = sub_factor3_1 * sub_factor3_2
+
+        return factor * (sub_summand1 + sub_summand2 + sub_summand3)
+
+
+class CrossSectionCalcBebvm(CrossSectionCalc):
+    def __init__(self, T, atom=AtomFactory.get_neon()):
+        CrossSectionCalc.__init__(self, T, atom)
+        self.bbar = atom.B / (self.m_e * self.c ** 2)
+        self.ubar = atom.U_bed / (self.m_e * self.c ** 2)
+        self.beta_b = 1 - 1 / (1 + self.bbar) ** 2
+        self.beta_u = 1 - 1 / (1 + self.ubar) ** 2
+        self.tbar = self.T / (self.m_e * self.c ** 2)
+        self.beta_t = 1 - 1 / (1 + self.tbar) ** 2
+        array_elems = [np.log(elem) for elem in (self.beta_t / self.beta_b)]
+        value = np.sqrt(
+            self.alpha ** 2 / (self.beta_t + self.beta_b) * np.array(array_elems)
+        )
+        self.phi = np.cos(value)
+        self.f_2 = (
+            -self.phi / (self.t + 1) * (1 + 2 * self.tbar) / (1 + self.tbar / 2) ** 2
+        )
+        self.f_3 = (
+            np.log(self.beta_t * (1 + self.tbar) ** 2)
+            - self.beta_t
+            - (2 * np.array([np.log(elem) for elem in self.bbar]))
+        )
+
+    '''
+    def calculate(self):
+        pass
+
+
+
+
     def total_cross_section_bebvm(self):
 
         """
@@ -177,47 +328,47 @@ class CrossSectionCalc:
 
         """
         f_1 = (
-            Decimal(4.0)
+            (4.0)
             * np.pi
-            * self.alpha ** Decimal(4.0)
-            * self.a_0 ** Decimal(2.0)
+            * self.alpha ** (4.0)
+            * self.a_0 ** (2.0)
             * self.atom.N
-            / (Decimal(2.0) * self.bbar * (self.beta_t + (self.beta_b + self.beta_u)) / Decimal(2.0))
+            / ((2.0) * self.bbar * (self.beta_t + (self.beta_b + self.beta_u)) / (2.0))
         )
         total_cross_sec = np.sum(
             f_1
             * (
-                self.f_2 * np.array([elem.ln() for elem in ((self.w_max + Decimal(1.0)) / (self.t - self.w_max) * self.t)])
-                - Decimal(1) / (self.w_max + Decimal(1.0))
-                + Decimal(1.0)
-                + Decimal(1.0) / (self.t - self.w_max)
-                - Decimal(1.0) / self.t
-                + self.bbar ** 2 * self.w_max / (Decimal(1.) + self.tbar / Decimal(2.0)) ** 2
+                self.f_2 * np.array([elem.ln() for elem in ((self.w_max + (1.0)) / (self.t - self.w_max) * self.t)])
+                - (1) / (self.w_max + (1.0))
+                + (1.0)
+                + (1.0) / (self.t - self.w_max)
+                - (1.0) / self.t
+                + self.bbar ** 2 * self.w_max / ((1.) + self.tbar / (2.0)) ** 2
                 + self.f_3
-                / Decimal(2.0)
+                / (2.0)
                 * (
-                    Decimal(1) / (self.t - self.w_max) ** 2
-                    - Decimal(1) / self.t ** Decimal(2.0)
-                    - Decimal(1) / (self.w_max + Decimal(1.0)) ** 2
-                    + Decimal(1)
+                    (1) / (self.t - self.w_max) ** 2
+                    - (1) / self.t ** (2.0)
+                    - (1) / (self.w_max + (1.0)) ** 2
+                    + (1)
                 )
             )
         )
-        return Decimal(1.0e4) * Decimal(total_cross_sec)
+        return (1.0e4) * (total_cross_sec)
 
 
     def differential_cross_section_subshells_bed(self, w_var, n_shell):
-        w = Decimal(w_var)
+        w = (w_var)
         # Current kinetic energy of electrons in respective shell(n_shell) in units of the binding energy
         u = self.atom.U_bed[n_shell] / self.atom.B[n_shell]
         # different coefficients for different energy regimes, W+U-B hereby corresponds to the
         ai = (
             self.atom.ai_below
-            if (w + u - Decimal(1.0)) * self.atom.B[n_shell] < Decimal(48.47)
+            if (w + u - (1.0)) * self.atom.B[n_shell] < (48.47)
             else self.atom.ai_above
         )
         osc_str_vec = np.dot(
-            ai, np.array([-1 / (w + u - Decimal(1.0)) ** (i + 2) for i in range(7)])
+            ai, np.array([-1 / (w + u - (1.0)) ** (i + 2) for i in range(7)])
         )
 
         osc_str = np.reshape(osc_str_vec, (len(self.atom.B)))[n_shell]
@@ -244,13 +395,13 @@ class CrossSectionCalc:
         for i in range(len(self.w_max)):
             integrated_cross_sec_subshells[i] = quad(
                 self.differential_cross_section_subshells_bed,
-                Decimal(0.),
+                (0.),
                 self.w_max[i],
                 args=(i),
             )[0]
         total_cross_section_bed = np.sum(integrated_cross_sec_subshells)
 
-        return Decimal(1.0e4) * Decimal(total_cross_section_bed)  # Converting from m**2 to cm**2
+        return (1.0e4) * (total_cross_section_bed)  # Converting from m**2 to cm**2
 
 def _calculate_diff_cross_sec_subshell_n(self, n_shell, u, w, osc_str):
         """
@@ -264,148 +415,35 @@ def _calculate_diff_cross_sec_subshell_n(self, n_shell, u, w, osc_str):
         """
         return (
                 self.f_1_bed
-                / (self.t + u + Decimal(1.0))
+                / (self.t + u + (1.0))
                 * (
-                        (self.atom.Ni / self.atom.N - Decimal(2.0))
-                        / (self.t + Decimal(1.0))
-                        * (Decimal(1.0) / (w + Decimal(1.0)) + Decimal(1.0) / (self.t - w))
-                        + (Decimal(2.0) - self.atom.Ni / self.atom.N)
-                        * (Decimal(1.0) / (self.t - w) ** 2 + Decimal(1.0) / (w + Decimal(1.0)) ** 2)
+                        (self.atom.Ni / self.atom.N - (2.0))
+                        / (self.t + (1.0))
+                        * ((1.0) / (w + (1.0)) + (1.0) / (self.t - w))
+                        + ((2.0) - self.atom.Ni / self.atom.N)
+                        * ((1.0) / (self.t - w) ** 2 + (1.0) / (w + (1.0)) ** 2)
                         + np.array([elem.ln() for elem in self.t]) / self.atom.N
-                        * np.dot(Decimal(1.0) / (w + Decimal(1.0)), osc_str)
+                        * np.dot((1.0) / (w + (1.0)), osc_str)
                 )
         )[n_shell]
 
     def integ(self, a, b, n_sample, shell = 0):
         x_vals = np.linspace(a, b, num = n_sample)
-        dx = (Decimal(b) - Decimal(a)) / Decimal(n_sample)
-        integral = Decimal(0)
+        dx = ((b) - (a)) / (n_sample)
+        integral = (0)
         for x in x_vals:
-            integral += (Decimal(x))**2 * dx #self.differential_cross_section_subshells_bed(x, shell) * dx
+            integral += ((x))**2 * dx #self.differential_cross_section_subshells_bed(x, shell) * dx
         return integral
 
     def integ2(self, a, b, dx_initial, shell = 0):
-        dx = Decimal(dx_initial)
-        x = Decimal(a)
-        integral = Decimal(0)
+        dx = (dx_initial)
+        x = (a)
+        integral = (0)
         while x <= b:
-            delta_integral = Decimal(x + dx / 2)**2 * dx  #self.differential_cross_section_subshells_bed(x, shell) * dx
+            delta_integral = (x + dx / 2)**2 * dx  #self.differential_cross_section_subshells_bed(x, shell) * dx
             integral += delta_integral
             dx /= delta_integral
             x += dx
         return integral
 
     '''
-
-
-class CrossSectionCalcBed(CrossSectionCalc):
-    def __init__(self, T, atom=AtomFactory.get_neon()):
-        CrossSectionCalc.__init__(self, T, atom)
-        self.u = self.atom.U_bed / self.atom.B  # Constant factor from derivation
-
-    def calculate(self):
-        """
-        Calculate the cross section binary encouter dipole
-
-        Example:
-        >>> calc = CrossSectionCalcBed(3810, atom= AtomFactory.get_neon())
-        >>> calc.calculate()
-
-        4.007883837878639e-18
-
-        :return: Total integrated cross section
-        """
-
-        integrated_cross_sec_subshells = np.zeros(len(self.w_max))
-        for i in range(len(self.w_max)):
-            integrated_cross_sec_subshells[i] = quad(
-                self.SDCS,
-                Decimal(0.),
-                self.w_max[i],
-                args=(i),
-            )[0]
-        total_cross_section_bed = np.sum(integrated_cross_sec_subshells)
-
-        return Decimal(1.0e4) * Decimal(total_cross_section_bed)  # Converting from m**2 to cm**2
-
-    def calculate_oscillator_strength(self, w, n_shell):
-        """
-        Example:
-        >>> calc = CrossSectionCalcBed(3810)
-        >>> w = 4
-        >>> calc.calculate_oscillator_strength(w, 0)
-        :param w:
-        :param n_shell:
-        :return:
-        """
-        treshold = (Decimal(w) + self.u[n_shell] - Decimal(1.0)) * self.atom.B[n_shell]
-        coefficient_matrix = self.atom.ai_below if treshold < Decimal(48.47) else self.atom.ai_above
-        quotient = [-1 / (Decimal(w) + self.u[n_shell] - Decimal(1.0)) ** (i + 2) for i in range(7)]
-        osc_str_vec = np.dot(coefficient_matrix, np.array(quotient))
-        # TODO check why the fuck he did that
-        return np.reshape(osc_str_vec, (len(self.atom.B)))[n_shell]
-
-    def SDCS(self, w, n_shell):
-        """"
-        Single differential cross section
-
-        Example:
-        >>> calc = CrossSectionCalcBed(3810)
-        >>> w = 30000
-        >>> calc.SDCS(w, 0)
-        array([Decimal('-6.62866638228305761587815663304734428699745896E-43'),
-               Decimal('2.10867093099800235595671896266577978741435511E-27'),
-               Decimal('3.77141394254224385777721363298093896835050815E-26')],
-              dtype=object)
-        >>> quad(calc.SDCS, 0, 3000, args=(0))
-        """
-        u = self.atom.U_bed[n_shell] / self.atom.B[n_shell]
-        S = Decimal(4) * Decimal(np.pi) * self.a_0 ** 2 * self.atom.N[n_shell] * (self.R / self.atom.B[n_shell]) ** 2
-        oscillator_strength = self.calculate_oscillator_strength(w, n_shell)
-
-        factor = S / (self.t + u + Decimal(1.0))
-
-        sub_factor1_1 = (self.atom.Ni[n_shell] / self.atom.N[n_shell]) - Decimal(2.0) / (self.t[n_shell] + Decimal(1))
-        sub_factor1_2 = (Decimal(1.0) / (Decimal(w) + Decimal(1.0)) + Decimal(1.0) / (self.t[n_shell] - Decimal(w)))
-        sub_summand1 = sub_factor1_1 * sub_factor1_2
-
-        sub_factor2_1 = (Decimal(2.0) - self.atom.Ni[n_shell] / self.atom.N[n_shell])
-        sub_factor2_2 = (Decimal(1.0) / (self.t[n_shell] - Decimal(w)) ** 2 + Decimal(1.0) / (Decimal(w) + Decimal(1.0)) ** 2)
-        sub_summand2 = sub_factor2_1 * sub_factor2_2
-
-        sub_factor3_1 = self.t[n_shell].ln() / self.atom.N[n_shell]
-        sub_factor3_2 = np.dot(Decimal(1.0) / (Decimal(w) + Decimal(1.0)), oscillator_strength)
-        sub_summand3 = sub_factor3_1 * sub_factor3_2
-
-        return factor * (sub_summand1 + sub_summand2 + sub_summand3)
-
-
-class CrossSectionCalcBebvm(CrossSectionCalc):
-    def __init__(self, T, atom=AtomFactory.get_neon()):
-        CrossSectionCalc.__init__(self, T, atom)
-        self.bbar = atom.B / (self.m_e * self.c ** 2)
-        self.ubar = atom.U_bed / (self.m_e * self.c ** 2)
-        self.beta_b = 1 - 1 / (1 + self.bbar) ** 2
-        self.beta_u = 1 - 1 / (1 + self.ubar) ** 2
-        self.tbar = self.T / (self.m_e * self.c ** 2)
-        self.beta_t = 1 - 1 / (1 + self.tbar) ** 2
-        array_elems = [elem.ln() for elem in (self.beta_t / self.beta_b)]
-        value = np.sqrt(
-            self.alpha ** 2
-            / (self.beta_t + self.beta_b)
-            * np.array(array_elems)
-        )
-        self.phi = decimalCos(
-            value
-        )
-        self.f_2 = (
-                -self.phi / (self.t + 1) * (1 + 2 * self.tbar) / (1 + self.tbar / 2) ** 2
-        )
-        self.f_3 = (
-                (self.beta_t * (1 + self.tbar) ** 2).ln()
-                - self.beta_t
-                - (2 * np.array([elem.ln() for elem in self.bbar]))
-        )
-
-    def calculate(self):
-        pass
