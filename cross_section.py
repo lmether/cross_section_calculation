@@ -163,15 +163,13 @@ class CrossSectionCalc:
         self.T = (T) #* 1e9
         self.t = self.T / atom.B  # T in units of binding energy(vector with entries for each subshell)
         self.w_max = (self.t - (1)) / (2)
-
+        self.u = self.atom.U_bed / self.atom.B  # Constant factor from derivation
 
 
 
 class CrossSectionCalcBed(CrossSectionCalc):
     def __init__(self, T, atom=AtomFactory.get_neon()):
         CrossSectionCalc.__init__(self, T, atom)
-
-        self.u = self.atom.U_bed / self.atom.B  # Constant factor from derivation
 
 
     def calculate_modified_oscillator_strength(self, w, n_shell):
@@ -264,9 +262,50 @@ class CrossSectionCalcBed(CrossSectionCalc):
         return Mi_n_shell
 
 
-class CrossSectionCalcBEB(CrossSectionCalc):
+class CrossSectionCalcBeb(CrossSectionCalc):
     def __init__(self, T, atom = AtomFactory.get_neon()):
         CrossSectionCalc.__init__(self, T, atom)
+        self.Q = 1. / 2
+
+
+    def calculate(self):
+
+        """
+        Calculate ionization cross section acording to the BEB model, which is a simplified model of the BED ansatz
+        >>> calcBeb = CrossSectionCalcBeb(3.81e9, atom = AtomFactory.get_hydrogen())
+        >>> calcBed =  CrossSectionCalcBed(3.81e9, atom = AtomFactory.get_hydrogen())
+        >>> calcBeb.calculate() - calcBed.calculate()
+        :return:
+        """
+
+        integrated_cross_sec_subshells = np.zeros(len(self.w_max))
+        for n_shell in range(len(self.w_max)):
+            u = self.atom.U_bed[n_shell] / self.atom.B[n_shell]
+            S = (
+                    (4)
+                    * (np.pi)
+                    * self.a_0 ** 2
+                    * self.atom.N[n_shell]
+                    * (self.R / self.atom.B[n_shell]) ** 2
+            )
+
+            factor = S / (self.t[n_shell] + u + 1.0)
+
+            sub_factor1_1 = self.Q / 2
+            sub_factor1_2 = ( 1. - 1. / (self.t[n_shell]) ** 2 ) * np.log(self.t[n_shell])
+            summand1 = sub_factor1_1 * sub_factor1_2
+
+            sub_factor2_1 = 2.0 - self.Q
+            sub_factor2_2 = (self.t[n_shell] - 1.0) / self.t[n_shell] - np.log(self.t[n_shell]) / (self.t[n_shell] + 1.)
+            summand2= sub_factor2_1 * sub_factor2_2
+
+            integrated_cross_sec_subshells[n_shell] += summand1 + summand2
+            integrated_cross_sec_subshells[n_shell] *= factor
+
+        total_cross_section_bed = np.sum(integrated_cross_sec_subshells)
+
+        return (total_cross_section_bed)
+
 
 
 
