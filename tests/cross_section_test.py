@@ -1,5 +1,7 @@
 import unittest
 
+import sys
+sys.path.append("")
 from cross_section import CrossSectionCalcBed, AtomFactory
 import matplotlib.pyplot as plt
 import numpy as np
@@ -17,7 +19,7 @@ class TestCrossSectionCalc(unittest.TestCase):
         for i, T in enumerate(x):
             cross = CrossSectionCalcBed(3.81e9, atom=AtomFactory.get_helium())
             y[i] = cross.Mi_calculation(0, T, 0)
-            sample_array = np.linspace(0, T, num = 1000000)
+            sample_array = np.linspace(0, T, num = 100)
             for j in range(len(sample_array) - 1):
                 z[i] += cross.Mi_calculation(sample_array[j], sample_array[j + 1], 0)
             print(z - y)

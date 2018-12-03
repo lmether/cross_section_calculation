@@ -256,7 +256,7 @@ class CrossSectionCalcBed(CrossSectionCalc):
         """
         Example:
         >>> calc = CrossSectionCalcBed(3.81e9,  atom = AtomFactory.get_neon())
-        >>> calc.Mi_calculation(0., np.inf, 2)
+        >>> calc.Mi_calculation(0., 1e10, 2)
         """
         Mi_n_shell = quad(self.calculate_modified_oscillator_strength, lower_boundary, upper_boundary, args=(n_shell)
             )[0]
