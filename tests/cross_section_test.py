@@ -1,10 +1,11 @@
-import unittest
-
+'''
 import sys
 sys.path.append("")
-from cross_section import CrossSectionCalcBed, AtomFactory
 import matplotlib
 matplotlib.use('agg')
+'''
+import unittest
+from cross_section import CrossSectionCalcBed, CrossSectionCalcBeb, AtomFactory
 import matplotlib.pyplot as plt
 import numpy as np
 
@@ -12,25 +13,24 @@ import numpy as np
 class TestCrossSectionCalc(unittest.TestCase):
 
 
-    def test_Mi_calc(self):
-        log_boundary_a = 4.
-        log_boundary_b = 11.
-        x = np.logspace(log_boundary_a, log_boundary_b, num=10)
-        y = np.zeros(len(x))
-        z = np.zeros(len(x))
+    def test_behaviour(self):
+        log_boundary_a = 9.
+        log_boundary_b = 9.7
+        x = np.logspace(log_boundary_a, log_boundary_b, num=100)
+        y_bed = np.zeros(len(x))
+        y_beb = np.zeros(len(x))
+        y_bethe = np.zeros(len(x))
+        Atom = AtomFactory.get_helium()
         for i, T in enumerate(x):
-            cross = CrossSectionCalcBed(3.81e9, atom=AtomFactory.get_helium())
-            y[i] = cross.Mi_calculation(0, T, 0)
-<<<<<<< HEAD
-            sample_array = np.linspace(0, T, num = 100)
-=======
-            sample_array = np.linspace(0, T, num = 1000)
->>>>>>> 744fa58dfa98d16c5f35410f85a3bd36c7ae9de0
-            for j in range(len(sample_array) - 1):
-                z[i] += cross.Mi_calculation(sample_array[j], sample_array[j + 1], 0)
-            print(z - y)
-        plt.semilogx(x, y)
-        plt.semilogx(x, z)
+            crossBed = CrossSectionCalcBed(T, atom = Atom)
+            crossBeb = CrossSectionCalcBeb(T, atom = Atom)
+            y_bed[i] = crossBed.calculate()
+            y_beb[i] = crossBeb.calculate()
+            y_bethe[i] = crossBed.bethe_asymptotic()
+        plt.semilogx(x, y_bed, label = 'BED model')
+        plt.semilogx(x, y_beb, label = 'BEB model')
+        plt.semilogx(x, y_bethe, label = 'Asymptotic behaviour (Bethe theory)')
+        plt.legend()
         plt.show()
 
 

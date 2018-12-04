@@ -13,7 +13,7 @@ Sources :   Binary-encounter-dipole model for electron-impact ionization
 """
 
 import numpy as np
-from scipy.integrate import quad
+import mpmath as mp
 
 
 class Atom(object):
@@ -164,6 +164,7 @@ class CrossSectionCalc:
         self.t = self.T / atom.B  # T in units of binding energy(vector with entries for each subshell)
         self.w_max = (self.t - (1)) / (2)
         self.u = self.atom.U_bed / self.atom.B  # Constant factor from derivation
+        self.S = 4 * (np.pi) * self.a_0 ** 2 * self.atom.N * (self.R / self.atom.B) ** 2
 
 
 
@@ -178,10 +179,6 @@ class CrossSectionCalcBed(CrossSectionCalc):
         >>> calc = CrossSectionCalcBed(3.81e9, atom = AtomFactory.get_neon())
         >>> w = calc.w_max[2]
         >>> calc.calculate_modified_oscillator_strength(w, 2)
-
-        :param w:
-        :param n_shell:
-        :return:
         """
         threshold = ((w) + 1.0) * self.atom.B[n_shell]
         coefficient_matrix = (
@@ -194,21 +191,13 @@ class CrossSectionCalcBed(CrossSectionCalc):
     def calculate(self):
         """
         Example:
-
-        >>> calc = calc = CrossSectionCalcBed(3.81e9, atom = AtomFactory.get_h2())
+        >>> calc = CrossSectionCalcBed(3.81e9, atom = AtomFactory.get_hydrogen())
         >>> calc.calculate()
-        :return:
         """
         integrated_cross_sec_subshells = np.zeros(len(self.w_max))
         for n_shell in range(len(self.w_max)):
-            u = self.atom.U_bed[n_shell] / self.atom.B[n_shell]
-            S = (
-                (4)
-                * (np.pi)
-                * self.a_0 ** 2
-                * self.atom.N[n_shell]
-                * (self.R / self.atom.B[n_shell])**2
-            )
+            u = self.u[n_shell]
+            S = self.S[n_shell]
 
             factor = S / (self.t[n_shell] + u + 1.0)
 
@@ -216,48 +205,51 @@ class CrossSectionCalcBed(CrossSectionCalc):
             sub_factor1_2 = (self.t[n_shell] - 1.0) / self.t[n_shell] - np.log(self.t[n_shell]) / (self.t[n_shell] + 1.)
             summand1 = sub_factor1_1 * sub_factor1_2
 
-            integrated_cross_sec_subshells[n_shell] = quad(
-                self.calculate_modified_oscillator_strength, 0, self.w_max[n_shell], args=(n_shell)
-            )[0]
+            integrated_cross_sec_subshells[n_shell] = mp.quad(
+                lambda w: self.calculate_modified_oscillator_strength(w, n_shell), [0., self.w_max[n_shell]]
+            )
 
-            integrated_cross_sec_subshells[n_shell] *= np.log(self.t[n_shell]) / self.atom.N[n_shell]
+            factor2 = np.log(self.t[n_shell]) / self.atom.N[n_shell]
+            integrated_cross_sec_subshells[n_shell] *= factor2
             integrated_cross_sec_subshells[n_shell] += summand1
             integrated_cross_sec_subshells[n_shell] *= factor
 
         total_cross_section_bed = np.sum(integrated_cross_sec_subshells)
 
 
-        return (total_cross_section_bed)
+        return 1e4 * (total_cross_section_bed)
 
     def bethe_asymptotic(self):
         """
         Example
-        >>> bethe = CrossSectionCalcBed(1.4e7, atom=AtomFactory.get_helium())
+        >>> bethe = CrossSectionCalcBed(3.81e9, atom=AtomFactory.get_hydrogen())
         >>> bethe.bethe_asymptotic()
         """
 
         cross_section_vec = np.zeros(len(self.w_max))
         for n_shell in range(len(self.w_max)):
-            S = (
-                    (4)
-                    * (np.pi)
-                    * self.a_0 ** 2
-                    * self.atom.N[n_shell]
-                    * (self.R / self.atom.B[n_shell]) ** 2
+
+            S = self.S[n_shell]
+
+            #Q = 2 * self.atom.B[n_shell] * self.atom.Mi[n_shell] / (self.atom.N[n_shell] * self.R)
+            #cross_section_vec[n_shell] = S * Q / 2 * np.log(self.t[n_shell]) / self.t[n_shell]
+            factor1 = (S) / (self.t[n_shell])
+            factor2 = np.log(self.t[n_shell]) / self.atom.N[n_shell]
+            cross_section_vec[n_shell] += mp.quad(
+                lambda w: self.calculate_modified_oscillator_strength(w, n_shell), [0.,self.w_max[n_shell]]
             )
-            Q = 2 * self.atom.B[n_shell] * self.atom.Mi[n_shell] / (self.atom.N[n_shell] * self.R)
-            cross_section_vec[n_shell] = S * Q / 2 * np.log(self.t[n_shell]) / self.t[n_shell]
+            cross_section_vec[n_shell] *= factor1 * factor2
         cross_section_bethe = np.sum(cross_section_vec)
         return 1.0e4 * cross_section_bethe
 
     def Mi_calculation(self, lower_boundary, upper_boundary, n_shell):
         """
         Example:
-        >>> calc = CrossSectionCalcBed(3.81e9,  atom = AtomFactory.get_neon())
-        >>> calc.Mi_calculation(0., 1e10, 2)
+        >>> calc = CrossSectionCalcBed(3.81e9, atom = AtomFactory.get_neon())
+        >>> calc.Mi_calculation(0., 1e9, 2)
         """
-        Mi_n_shell = quad(self.calculate_modified_oscillator_strength, lower_boundary, upper_boundary, args=(n_shell)
-            )[0]
+        Mi_n_shell = mp.quad(lambda w: self.calculate_modified_oscillator_strength(w, n_shell),
+                             [lower_boundary, upper_boundary])
         Mi_n_shell *= self.R / self.atom.B[n_shell]
         return Mi_n_shell
 
@@ -265,7 +257,7 @@ class CrossSectionCalcBed(CrossSectionCalc):
 class CrossSectionCalcBeb(CrossSectionCalc):
     def __init__(self, T, atom = AtomFactory.get_neon()):
         CrossSectionCalc.__init__(self, T, atom)
-        self.Q = 1. / 2
+        self.Q = 1.
 
 
     def calculate(self):
@@ -275,20 +267,14 @@ class CrossSectionCalcBeb(CrossSectionCalc):
         >>> calcBeb = CrossSectionCalcBeb(3.81e9, atom = AtomFactory.get_hydrogen())
         >>> calcBed =  CrossSectionCalcBed(3.81e9, atom = AtomFactory.get_hydrogen())
         >>> calcBeb.calculate() - calcBed.calculate()
+        >>> calcBeb.calculate()
         :return:
         """
 
         integrated_cross_sec_subshells = np.zeros(len(self.w_max))
         for n_shell in range(len(self.w_max)):
-            u = self.atom.U_bed[n_shell] / self.atom.B[n_shell]
-            S = (
-                    (4)
-                    * (np.pi)
-                    * self.a_0 ** 2
-                    * self.atom.N[n_shell]
-                    * (self.R / self.atom.B[n_shell]) ** 2
-            )
-
+            u = self.u[n_shell]
+            S = self.S[n_shell]
             factor = S / (self.t[n_shell] + u + 1.0)
 
             sub_factor1_1 = self.Q / 2
@@ -304,7 +290,7 @@ class CrossSectionCalcBeb(CrossSectionCalc):
 
         total_cross_section_bed = np.sum(integrated_cross_sec_subshells)
 
-        return (total_cross_section_bed)
+        return 1e4 * (total_cross_section_bed)
 
 
 
@@ -346,7 +332,8 @@ class CrossSectionCalcBebvm(CrossSectionCalc):
 
         """
 
-        # INTEGRATED VERSION OF BEBVM INTEGRATED FROM A FINAL EJECTED KINETIC ENERGY OF 0 TO w_max = ( (T + U) / B - 1 ) / 2
+        # INTEGRATED VERSION OF BEBVM INTEGRATED FROM A FINAL EJECTED KINETIC ENERGY OF 0 TO w_max = ( (T + U) / B - 1 )
+         /  2
         # TO OBTAIN TOTAL CROSS SECTION. ORIGINAL FORM OF THE DIFFERENTIAL CROSS SECTION:
         # d_sigma/d_w = f_1 * ( f_2 * (1 / (w + 1) + 1 / (t - w)) + 1 / (w + 1)**2 +
         # + 1 / (t - w)**2 + bbar**2 / (1 + tbar / 2)**2 + f_3 * (1 / (w + 1)**3 + 1 / (t - w)**3) )
