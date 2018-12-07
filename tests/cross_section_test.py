@@ -5,30 +5,36 @@ import matplotlib
 matplotlib.use('agg')
 '''
 import unittest
-from cross_section import CrossSectionCalcBed, CrossSectionCalcBeb, AtomFactory
 import matplotlib.pyplot as plt
 import numpy as np
+
+from crosssection.cross_section import CrossSectionCalcBeb, CrossSectionCalcBed, CrossSectionCalcVacNote, AtomFactory
 
 
 class TestCrossSectionCalc(unittest.TestCase):
 
 
     def test_behaviour(self):
-        log_boundary_a = 9.
-        log_boundary_b = 9.7
-        x = np.logspace(log_boundary_a, log_boundary_b, num=100)
+        Atom = AtomFactory.get_h2()
+        Atom.B
+        log_boundary_a = 7.
+        log_boundary_b = 13.
+        x = np.logspace(log_boundary_a, log_boundary_b, num = 50)
         y_bed = np.zeros(len(x))
         y_beb = np.zeros(len(x))
+        y_vac_note = np.zeros(len(x))
         y_bethe = np.zeros(len(x))
-        Atom = AtomFactory.get_helium()
         for i, T in enumerate(x):
             crossBed = CrossSectionCalcBed(T, atom = Atom)
             crossBeb = CrossSectionCalcBeb(T, atom = Atom)
+            crossVacNote = CrossSectionCalcVacNote(T, atom = Atom)
             y_bed[i] = crossBed.calculate()
             y_beb[i] = crossBeb.calculate()
             y_bethe[i] = crossBed.bethe_asymptotic()
+            y_vac_note[i] = crossVacNote.calculate()
         plt.semilogx(x, y_bed, label = 'BED model')
         plt.semilogx(x, y_beb, label = 'BEB model')
+        plt.semilogx(x, y_vac_note, label = 'Vacuum Note Calculation', linestyle = ':')
         plt.semilogx(x, y_bethe, label = 'Asymptotic behaviour (Bethe theory)')
         plt.legend()
         plt.show()
