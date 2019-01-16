@@ -29,7 +29,7 @@ Execute example usage
 crossection --example
 ```
 
-Execute with specific energy
+Execute with specific energy in scientific notation (eV)
 ```
-crossection --energy 123456789
+crossection --energy 1e7
 ```

@@ -9,7 +9,7 @@ from crosssection.cross_section import AtomFactory, CrossSectionCalcBed, CrossSe
 
 def parse_arguments():
     parser = argparse.ArgumentParser(
-        description="Ich bin eins dumma."
+        description="Description of optional Parameters."
     )
 
     parser.add_argument(
@@ -29,7 +29,7 @@ def parse_arguments():
         "-e",
         "--energy",
         help="Energy to use.",
-        type=int,
+        type=float,
     )
 
     return parser.parse_args()

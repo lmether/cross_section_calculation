@@ -175,18 +175,22 @@ class AtomFactory(object):
 
 class CrossSectionCalc:
     m_e = 9.11e-31  # Electron mass in kg
-    c = 3e8  # Speed of light in m/s
-    a_0 = 5.29e-9  # Bohr radius in cm
-    alpha = 1.0 / 137  # Fine structure constant
+    c = 2.998e8  # Speed of light in m/s
+    a_0 = 5.29e-11  # Bohr radius in m
+    alpha = 1. / 137.  # Fine structure constant
     R = 13.6  # Rydberg constant in eV
 
     def __init__(self, T, atom=AtomFactory.get_neon()):
         self.atom = atom
-        self.T = (T)  # * 1e9
+        self.e_charge = 1.6e-19
+        self.rest_en_eV = (self.c ** 2) * self.m_e / self.e_charge
+        self.T_rel = T #(1. - 1./((T) / self.rest_en_eV) ** 2 ) ** (1. / 2.)
+        self.T = self.rest_en_eV/2. * (1. - (self.rest_en_eV / (self.T_rel + self.rest_en_eV)) ** 2.)
         self.t = self.T / atom.B  # T in units of binding energy(vector with entries for each subshell)
         self.w_max = (self.t - (1)) / (2)
         self.u = self.atom.U_bed / self.atom.B  # Constant factor from derivation
         self.S = 4 * (np.pi) * self.a_0 ** 2 * self.atom.N * (self.R / self.atom.B) ** 2
+
 
 
 class CrossSectionCalcBed(CrossSectionCalc):
@@ -196,7 +200,7 @@ class CrossSectionCalcBed(CrossSectionCalc):
     def calculate_modified_oscillator_strength(self, w, n_shell):
         """
         Example:
-        >>> calc = CrossSectionCalcBed(3.81e9, atom = AtomFactory.get_neon())
+        >>> calc = CrossSectionCalcBed(1.4e8, atom = AtomFactory.get_neon())
         >>> w = calc.w_max[2]
         >>> calc.calculate_modified_oscillator_strength(w, 2)
         """
@@ -211,8 +215,8 @@ class CrossSectionCalcBed(CrossSectionCalc):
     def calculate(self):
         """
         Example:
-        >>> calc = CrossSectionCalcBed(26e9, atom = AtomFactory.get_h2())
-        >>> calc.calculate()
+        >>> calc = CrossSectionCalcBed(1.4e8, atom = AtomFactory.get_h2())
+        >>> calc.calculate()*2.
         """
         integrated_cross_sec_subshells = np.zeros(len(self.w_max))
         for n_shell in range(len(self.w_max)):
@@ -224,7 +228,6 @@ class CrossSectionCalcBed(CrossSectionCalc):
             sub_factor1_1 = 2.0 - (self.atom.Ni[n_shell] / self.atom.N[n_shell])
             sub_factor1_2 = (self.t[n_shell] - 1.0) / self.t[n_shell] - np.log(self.t[n_shell]) / (self.t[n_shell] + 1.)
             summand1 = sub_factor1_1 * sub_factor1_2
-
             integrated_cross_sec_subshells[n_shell] = mp.quad(
                 lambda w: self.calculate_modified_oscillator_strength(w, n_shell), [0., self.w_max[n_shell]]
             )
@@ -236,29 +239,29 @@ class CrossSectionCalcBed(CrossSectionCalc):
 
         total_cross_section_bed = np.sum(integrated_cross_sec_subshells)
 
-        return 1.e4 * (total_cross_section_bed)
+        return (total_cross_section_bed) * 1.e4
 
     def bethe_asymptotic(self):
         """
         Example
-        >>> bethe = CrossSectionCalcBed(26e9, atom=AtomFactory.get_helium())
+        >>> bethe = CrossSectionCalcBed(1.4e7, atom=AtomFactory.get_helium())
         >>> bethe.bethe_asymptotic()
         """
 
         cross_section_vec = np.zeros(len(self.w_max))
         for n_shell in range(len(self.w_max)):
-            S = self.S[n_shell]
 
-            # Q = 2 * self.atom.B[n_shell] * self.atom.Mi[n_shell] / (self.atom.N[n_shell] * self.R)
-            # cross_section_vec[n_shell] = S * Q / 2 * np.log(self.t[n_shell]) / self.t[n_shell]
+            S = self.S[n_shell]
             factor1 = (S) / (self.t[n_shell])
             factor2 = np.log(self.t[n_shell]) / self.atom.N[n_shell]
+
             cross_section_vec[n_shell] += mp.quad(
                 lambda w: self.calculate_modified_oscillator_strength(w, n_shell), [0., self.w_max[n_shell]]
             )
+
             cross_section_vec[n_shell] *= factor1 * factor2
         cross_section_bethe = np.sum(cross_section_vec)
-        return 1.0e4 * cross_section_bethe
+        return cross_section_bethe * 1.e4
 
     def Mi_calculation(self, lower_boundary, upper_boundary, n_shell):
         """
@@ -280,7 +283,7 @@ class CrossSectionCalcBeb(CrossSectionCalc):
     def calculate(self):
         """
         Calculate ionization cross section acording to the BEB model, which is a simplified model of the BED ansatz
-        >>> calcBeb = CrossSectionCalcBeb(1.4e8, atom = AtomFactory.get_h2())
+        >>> calcBeb = CrossSectionCalcBeb(3.81e9, atom = AtomFactory.get_h2())
         >>> calcBeb.calculate()
         """
 
@@ -303,33 +306,33 @@ class CrossSectionCalcBeb(CrossSectionCalc):
 
         total_cross_section_bed = np.sum(integrated_cross_sec_subshells)
 
-        return 1e4 * (total_cross_section_bed)
+        return (total_cross_section_bed) * 1.e4
 
 
 class CrossSectionCalcVacNote(CrossSectionCalc):
     def __init__(self, T, atom=AtomFactory.get_neon()):
         CrossSectionCalc.__init__(self, T, atom)
-        self.T = T
-        self.m0 = 9.109e-31
-        self.rest_en_eV = (self.c ** 2) * self.m0
-        self.e_charge = 1.6e-19
 
     def calculate(self):
         """
         Example
-        >>> calc = CrossSectionCalcVacNote(1.4e8, atom = AtomFactory.get_h2())
+        >>> en = 0.1
+        >>> Atom = AtomFactory.get_h2()
+        >>> calc = CrossSectionCalcVacNote(en, atom = Atom)
+        >>> calc2 = CrossSectionCalcBed(en, atom = Atom)
         >>> calc.calculate()
         :return:
         """
         M_squared = self.atom.M_squared
         C = self.atom.C
         correction_factor = self.atom.corr_fact
-        beta = (1. - (self.rest_en_eV / ((self.T - self.rest_en_eV) * self.e_charge)) ** 2.) ** (1. / 2.)
+        en_rest = self.rest_en_eV
+        beta = (2./self.rest_en_eV * self.T) ** (1./2.)#(1. - (self.rest_en_eV / ((self.T_rel + self.rest_en_eV))) ** 2.) ** (1. / 2.)
         gamma = beta / (1. - beta ** 2.) ** (1. / 2.)
         x = 2. * math.log(gamma) - beta ** 2.
         omega = 1.874e-24 * (1 / beta) ** 2. * (M_squared * x + C)
-        omega = omega * correction_factor  # Correction factor extrapolated from measurements at 26GeV
-
+        omega *= correction_factor  # Correction factor extrapolated from measurements at 26GeV
+        omega *= math.exp( - 1./(self.c ** 2. - self.c **2. * beta ** 2.))
         return omega * 1.e4  # from m^2 to cm^2
 
 
