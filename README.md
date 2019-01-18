@@ -34,3 +34,18 @@ Execute with specific incident energy (eV)
 ```
 crossection --energy 1e7
 ```
+
+
+## Testing Instructions
+
+Requirements:
+
+```bash
+pip install -r testing-requirements.txt
+```
+
+Execute tests:
+
+```bash
+pytest
+```
