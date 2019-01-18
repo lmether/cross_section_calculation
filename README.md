@@ -29,11 +29,8 @@ Execute example usage
 crossection --example
 ```
 
-<<<<<<< HEAD
-Execute with specific energy in scientific notation (eV)
-=======
+
 Execute with specific incident energy (eV)
->>>>>>> f0c8d5ff2dd404d3a26d9fc40fbb5fe5588f7618
 ```
 crossection --energy 1e7
 ```
