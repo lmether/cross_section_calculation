@@ -212,7 +212,7 @@ class CrossSectionCalcBed(CrossSectionCalc):
         osc_str = np.reshape(np.dot(coefficient_matrix, np.array(quotient)), (len(self.atom.B)))
         return 1 / (w + 1) * osc_str[n_shell]
 
-    def calculate(self):
+    def calculate_bed(self):
         """
         Example:
         >>> calc = CrossSectionCalcBed(1.4e8, atom = AtomFactory.get_h2())
