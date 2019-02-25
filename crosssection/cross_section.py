@@ -18,7 +18,7 @@ import mpmath as mp
 
 
 class Atom(object):
-    def __init__(self, Z, B, N, Ni, Mi, ai_below, ai_above, U_bed, M_squared, C, corr_fact):
+    def __init__(self, calc_method, Z, B, N, Ni, Mi, ai_below, ai_above, U_bed, M_squared, C, corr_fact):
         """
         :param B:           Bound electron binding energy in eV w.r.t the shell
         :param N:           Total occupation number of requested atom w.r.t the shell
@@ -30,6 +30,7 @@ class Atom(object):
                             energies above 2s ionization energy of (originally scaled via units of bounding energy)
         :param U_bed:       Bound electron kinetic energy in eV in the BED model
         """
+        self.calc_method = calc_method
         self.Z = Z
         self.B = B
         self.N = N
@@ -50,6 +51,7 @@ class AtomFactory(object):
 
     @staticmethod
     def get_hydrogen():
+        calc_method = 'bed'
         Z = 1.
         B = np.array([(13.6057)])
         N = np.array([(1)])
@@ -74,11 +76,12 @@ class AtomFactory(object):
         corr_fact = 1.2
 
         return Atom(
-            Z, B, N, Ni, Mi, ai_below_2s_ion_threshold, ai_above_2s_ion_threshold, U_bed, M_squared, C, corr_fact
+            calc_method, Z, B, N, Ni, Mi, ai_below_2s_ion_threshold, ai_above_2s_ion_threshold, U_bed, M_squared, C, corr_fact
         )
 
     @staticmethod
     def get_h2():
+        calc_method = 'bed'
         Z = 2.
         B = np.array([(1.543e1)])
         N = np.array([(2)])
@@ -103,11 +106,12 @@ class AtomFactory(object):
         corr_fact = 1.2
 
         return Atom(
-            Z, B, N, Ni, Mi, ai_below_2s_ion_threshold, ai_above_2s_ion_threshold, U_bed, M_squared, C, corr_fact
+            calc_method, Z, B, N, Ni, Mi, ai_below_2s_ion_threshold, ai_above_2s_ion_threshold, U_bed, M_squared, C, corr_fact
         )
 
     @staticmethod
     def get_helium():
+        calc_method = 'bed'
         Z = 2.
         B = np.array([(2.459e1)])
         N = np.array([(2)])
@@ -132,11 +136,50 @@ class AtomFactory(object):
         corr_fact = 1.2
 
         return Atom(
-            Z, B, N, Ni, Mi, ai_below_2s_ion_threshold, ai_above_2s_ion_threshold, U_bed, M_squared, C, corr_fact
+            calc_method, Z, B, N, Ni, Mi, ai_below_2s_ion_threshold, ai_above_2s_ion_threshold, U_bed, M_squared, C, corr_fact
         )
 
     @staticmethod
     def get_neon():
+        calc_method = 'bed'
+        Z = 10.
+        B = np.array([21.7, 48.47, 866.9])
+        N = np.array([6, 2, 2])
+
+        Ni = np.array([6.963, 0.7056, 1.686])
+        Mi = np.array([1.552, 4.8e-2, 1.642e-2])
+
+        ai_below_2s_ion_threshold = np.array(
+            [
+                [4.8791, -2.882, -7.4711e-1, 0.0, 0.0, 0.0, 0.0],
+                [0.0, 1.7769, 2.8135, -3.151e1, 6.3469e1, -5.2528e1, 1.5982e1],
+                [0.0, 0.0, 5.2475, -2.8121, 0.0, 0.0, 0.0],
+            ]
+        )
+
+        ai_above_2s_ion_threshold = np.array(
+            [
+                [0.0, -5.8514, 3.2930e2, -1.6788e3, 3.2985e3, -2.3250e3, 0.0],
+                [0.0, 1.7769, 2.8135, -3.151e1, 6.3469e1, -5.2528e1, 1.5982e1],
+                [0.0, 0.0, 5.2475, -2.8121, 0.0, 0.0, 0.0],
+            ]
+        )
+
+        U_bed = np.array([1.1602e2, 1.4188e2, 1.2591e3])
+
+        M_squared = 2.02
+
+        C = 18.17
+
+        corr_fact = 1.2
+
+        return Atom(
+            calc_method, Z, B, N, Ni, Mi, ai_below_2s_ion_threshold, ai_above_2s_ion_threshold, U_bed, M_squared, C, corr_fact
+        )
+
+    @staticmethod
+    def get_nitrogen():
+        calc_method = 'beb'
         Z = 10.
         B = np.array([21.7, 48.47, 866.9])
         N = np.array([6, 2, 2])
@@ -215,8 +258,8 @@ class CrossSectionCalcBed(CrossSectionCalc):
     def calculate_bed(self):
         """
         Example:
-        >>> calc = CrossSectionCalcBed(1.4e8, atom = AtomFactory.get_h2())
-        >>> calc.calculate()*2.
+        >>> calc = CrossSectionCalcBed(1.4e8, atom = AtomFactory.get_neon())
+        >>> calc.calculate_bed()*2.
         """
         integrated_cross_sec_subshells = np.zeros(len(self.w_max))
         for n_shell in range(len(self.w_max)):

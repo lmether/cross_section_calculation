@@ -6,6 +6,8 @@ import argparse
 
 from crosssection.cross_section import AtomFactory, CrossSectionCalcBed, CrossSectionCalcBeb, CrossSectionCalcVacNote
 
+atom_collection = {'h': AtomFactory.get_hydrogen(), 'h2': AtomFactory.get_h2(), 'he': AtomFactory.get_helium(),
+                   'ne': AtomFactory.get_nitrogen(), 'n2': AtomFactory.get_nitrogen()}
 
 def parse_arguments():
     parser = argparse.ArgumentParser(
@@ -30,6 +32,18 @@ def parse_arguments():
         "--energy",
         help="Energy to use.",
         type=float,
+    )
+
+    parser.add_argument(
+        "-s",
+        "--species",
+        help="Particle species to use. Until now, hydrogen(both atomic and molecular), helium, neon and molecular nitrogen are implemented. \n"
+             "Nomenclature: \n"
+             "Hydrogen: h / h2 \n"
+             "Helium: he \n"
+             "Neon: ne \n"
+             "Nitrogen n2 \n",
+        type=str,
     )
 
     return parser.parse_args()
@@ -59,13 +73,22 @@ def example():
     plt.legend()
     plt.show()
 
+
+def calc_CS(energy,species):
+
+    pass
+
+
 def main():
     args = parse_arguments()
     if args.version:
         print('0.1 alpha')
+    if args.energy and args.species:
+        calc_CS(args.energy, args.species)
     if args.energy:
         print(args.energy)
     if args.example:
+        print('Example curve for molecular hydrogen in a region 1e7 to 1e13')
         example()
 
 if __name__ == "__main__":

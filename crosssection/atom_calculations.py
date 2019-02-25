@@ -1,9 +1,14 @@
 
 import numpy as np
+#import sympy
 
 
 
-
+def singular_initial_states(Ne):
+    in_state0 = np.zeros(Ne)
+    for electron in range(Ne):
+        in_state0[electron] = 3
+    return in_state0
 
 
 
