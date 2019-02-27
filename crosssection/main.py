@@ -134,24 +134,24 @@ def main():
             print('Example curve for molecular hydrogen in a region 1e7 to 1e13')
             example()
 
-        if args.energy and not args.species:
+        if not args.species:
             print('No species defined. Add one via -s or --species .')
 
-        if args.species and not args.energy:
+        if not (args.energy or (args.energyupper and args.energylower)):
             print('No energy defined. Add one via -e or --energy .')
 
         if args.energy and args.species:
             return calc_CS(args.energy, args.species)
 
         if (args.energylower or args.energyupper) and not (args.energyupper and args.energylower):
-            raise Exception('You are missing a boundary.')
+            print('You are missing a boundary.')
 
         if (args.species and args.energylower and args.energyupper and args.energybinning):
             number_datapoints = (args.energyupper - args.energylower)//args.energybinning
             dataset = []
             for energy in np.linspace(args.energylower, args.energyupper, number_datapoints):
                 dataset.append([energy, calc_CS(energy, args.species)])
-            scs.save_as_mat(dataset, args.energylower, args.energyupper)
+            scs.save_as_mat(dataset, '%.1e'%(args.energylower), '%.1e'%(args.energyupper))
 
     except Exception as err:
         print(err)
