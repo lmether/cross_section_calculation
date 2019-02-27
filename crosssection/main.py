@@ -1,4 +1,4 @@
-import matplotlib.pyplot as plt
+#import matplotlib.pyplot as plt
 import numpy as np
 
 import crosssection.save_cross_section as scs
@@ -70,12 +70,12 @@ def parse_arguments():
 
     return parser.parse_args()
 
-def init_calculation(method, Atom):
+def init_calculation(Atom):
 
-    if method == 'bed':
+    if Atom.calc_method == 'bed':
         return lambda T: CrossSectionCalcBed(T, atom = Atom)
 
-    if method == 'beb':
+    if Atom.calc_method == 'beb':
         return lambda T: CrossSectionCalcBeb(T, atom = Atom)
 
     raise Exception('Calculation method has not been assigned yet. Work in progress,')
@@ -85,7 +85,7 @@ def example():
     Atom = AtomFactory.get_h2()
     log_boundary_a = 7.
     log_boundary_b = 13.
-    x = np.logspace(log_boundary_a, log_boundary_b, num = 50)
+    x = np.logspace(log_boundary_a, log_boundary_b, num = 5)
     y_bed = np.zeros(len(x))
     y_beb = np.zeros(len(x))
     y_vac_note = np.zeros(len(x))
@@ -98,20 +98,22 @@ def example():
         y_beb[i] = crossBeb.calculate()
         y_bethe[i] = crossBed.bethe_asymptotic()
         y_vac_note[i] = crossVacNote.calculate()
-    plt.semilogx(x, y_bed, label = 'BED model')
+    print(y_bed)
+    print(y_beb)
+    '''plt.semilogx(x, y_bed, label = 'BED model')
     plt.semilogx(x, y_beb, label = 'BEB model')
     plt.semilogx(x, y_vac_note, label = 'Vacuum Note Calculation', linestyle = ':')
     plt.semilogx(x, y_bethe, label = 'Asymptotic behaviour (Bethe theory)')
     plt.legend()
     plt.show()
-
+    '''
 
 def calc_CS(energy,species):
 
     try:
         Atom = atom_library[species]
-        cross = init_calculation(energy, Atom.calc_method)
-
+        cross_section_object = init_calculation(Atom)
+        cross = cross_section_object(energy)
 
     except Exception as err:
         print(err)
